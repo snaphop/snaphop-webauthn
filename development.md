@@ -163,6 +163,10 @@ requires `snaphop-cbor`). Cryptography is the JDK's. JSpecify (`org.jspecify`) i
 dependency, and only at compile time: `requires static transitive org.jspecify` in
 `module-info.java`, `optional` in the pom.
 
+No `sun.misc.Unsafe`, `jdk.internal` or other unsupported JDK API: the modules don't require
+`jdk.unsupported`, and each library's `ModuleTest` checks what they require. Native code, if it is
+ever needed, goes through the FFM API (Panama), never JNI.
+
 Integration with any other library never goes into a library module. It goes into a module
 of its own.
 
