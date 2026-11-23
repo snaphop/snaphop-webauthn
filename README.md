@@ -10,9 +10,28 @@ and their only runtime dependency is the JDK.
 
 ## Status
 
-Experimental, not yet released. Written for servers that need passkeys without the Jackson, Guava
-and reflection the existing libraries bring. To be reviewed before anything depends on it. Expect
-the API to change before 1.0.
+Experimental. Written for servers that need passkeys without the Jackson, Guava and reflection the
+existing libraries bring. Expect the API to change before 1.0.
+
+Releases are published to SnapHop's Maven repository:
+
+```xml
+<repositories>
+  <repository>
+    <id>snaphop-public-release</id>
+    <url>https://maven.snaphop.com/release</url>
+    <snapshots><enabled>false</enabled></snapshots>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>com.snaphop</groupId>
+  <artifactId>snaphop-webauthn</artifactId>
+  <version>0.1.0</version>
+</dependency>
+```
+
+`snaphop-webauthn` brings `snaphop-cbor` with it; `snaphop-cbor` can also be used alone.
 
 ## Why another one
 
