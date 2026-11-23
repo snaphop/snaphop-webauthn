@@ -100,6 +100,19 @@ compare. They never become dependencies of a library module.
   java-webauthn-server uses, for verdicts and values; Jackson's CBOR, whose verdicts are counted
   but not asserted (it keeps the last of a duplicate key).
 
+The WebAuthn test module also feeds the software authenticator's browser-shaped responses to
+[SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn) on Node 22 or newer. The npm lockfile
+pins its dependencies. This compares the resulting credential, flags, counters, and assertion
+verdicts. To run it locally from the repository root:
+
+```sh
+npm ci --ignore-scripts --prefix test/snaphop-webauthn-test/simplewebauthn
+./mvnw -Dsimplewebauthn.required=true verify
+```
+
+CI requires the JavaScript comparison. A JDK-only local build skips it when the npm package is
+absent.
+
 Data copied from other projects goes in `test/corpus/<project>`, with its license and an
 `UPSTREAM.md` naming where it came from and any changes. Tests read it from there, by path:
 

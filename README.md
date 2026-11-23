@@ -37,46 +37,58 @@ WebauthnRelyingParty rp = WebauthnRelyingParty.builder()
 // navigator.credentials.create(); the bytes are the response's, base64url-decoded.
 WebauthnCredential credential = rp.register(
     WebauthnRegistration.of(clientDataJson, attestationObject), challenge, userHandle);
-store(credential.credentialId(), credential.publicKeyCose(), credential.userHandle(),
+insertNewCredential(credential.credentialId(), credential.publicKeyCose(), credential.userHandle(),
     credential.signCount(), credential.backupEligible(), credential.backedUp());
 
-// Signing in. Look the stored credential up by the response's credential ID.
+// Discoverable sign-in. Look up the stored credential by both the response's
+// credential ID and user handle. Refuse a missing handle or record.
 WebauthnAssertion assertion = WebauthnAssertion.builder()
     .credentialId(rawId)
     .clientDataJson(clientDataJson)
     .authenticatorData(authenticatorData)
     .signature(signature)
-    .userHandle(userHandle) // null when the browser sent none
+    .userHandle(responseUserHandle)
     .build();
 WebauthnCredential stored = WebauthnCredential.builder(credentialId, publicKeyCose, userHandle)
     .signCount(signCount).backupEligible(backupEligible).backedUp(backedUp)
     .build();
-WebauthnSignIn signIn = rp.signIn(assertion, challenge, stored);
-update(signIn.credential()); // its counter and backup state
+WebauthnSignIn signIn = rp.signInDiscoverable(assertion, challenge, stored);
+updateIfCurrent(stored, signIn.credential()); // its counter and backup state
 ```
 
 Anything refused is a `WebauthnException`, with a `reason()` for code and a message for people,
 such as `The origin "https://evil.example" is not one of this relying party's: https://example.org`.
 
-The caller makes challenges (32 random bytes from `SecureRandom`, used once, forgotten after a
-few minutes), stores credentials, and reads the browser's JSON.
+The caller reads the browser's JSON and binds each challenge (32 random bytes from
+`SecureRandom`) to the ceremony, account when known, and options issued by the server.
+Make challenge consumption atomic, use each challenge once, and expire it after a few minutes.
+Insert new credentials with a unique constraint on credential ID across accounts for the RP.
+Update the stored counter and backup state conditionally on the credential state used for
+verification, or serialize verification and updates for each credential.
+
+For a sign-in initiated for an identified account, call `signIn` with a credential selected
+from that account and any `allowCredentials` in the request. The response may omit the user
+handle in that flow. For conditional registration, pass `RegistrationMediation.CONDITIONAL`
+only when the server's original request used conditional mediation.
 
 ## What it checks
 
-Everything WebAuthn Level 3 asks of a relying party that doesn't verify attestation, and these,
-more strictly than either library above:
+The verifier handles client data, authenticator data, credential keys, and assertion signatures.
+The caller completes the account and storage steps above.
 
 - **The client data** must be UTF-8 JSON with nothing after it and no member twice (two `origin`
   members could be read differently by two parsers). The challenge is compared as the exact
   base64url text, origins exactly, `crossOrigin` and `topOrigin` against what the relying party
-  allows.
+  allows. When a top-origin allowlist is configured, cross-origin responses must supply a
+  matching `topOrigin`.
 - **The authenticator data's** flags must agree with what follows: attested credential data
   exactly when AT is set (never in a sign-in), extensions exactly when ED is set, nothing after the
   last part. A credential can't be backed up without being backup eligible, and its eligibility
   can't change.
 - **Credential public keys** (COSE): the algorithm must go with the key type and curve,
   coordinates must be the curve's size, below its prime and on the curve, RSA moduli at least
-  2048 bits. Checked at registration, so a key that can never verify isn't stored.
+  2048 bits. New credentials use canonical CBOR and contain only the required public key
+  parameters and `alg`.
 - **Signatures**: ECDSA signatures must be strict DER with r and s from 1 to n - 1 (what
   CVE-2022-21449 let through), before the JDK checks them. EdDSA signatures must be their exact
   length.
@@ -92,14 +104,17 @@ Algorithms: ES256, ES384, ES512, EdDSA (Ed25519 and Ed448), Ed25519, Ed448, RS25
   section 16 (every algorithm, every attestation format, cross-origin, a 1023-byte credential ID).
 - **A software authenticator** in the tests makes real ceremonies for every key type, then about a
   hundred changes to them, each refused for its reason with its exact message.
-- **Oracles**: every ceremony and change is also checked by webauthn4j and java-webauthn-server.
-  What this library accepts, both of them accept; where they differ (18 cases), each is listed with
+- **Oracles**: selected ceremonies and changes are also checked by webauthn4j and java-webauthn-server.
+  What this library accepts, both of them accept; where they differ, each case is listed with
   why. In every one of them this library refuses and an oracle accepts. Some examples:
   - both oracles register a key whose point is not on its curve;
   - both oracles register a key whose algorithm doesn't go with its curve;
   - java-webauthn-server ignores `crossOrigin`, `topOrigin`, text after the client data, and bytes
     after a sign-in's authenticator data;
   - webauthn4j keeps the last of a COSE key's members written twice.
+- **JavaScript reference**: SimpleWebAuthn verifies the same registration and assertion bytes
+  on Node in the test module. CI requires this comparison, including stored credential values
+  and representative refusal cases.
 - **Damage**: thousands of real ceremonies with random damage (a bit flipped, a byte changed,
   added, taken out, cut short). This library only ever refuses with a `WebauthnException`, and
   never accepts what an oracle refuses.

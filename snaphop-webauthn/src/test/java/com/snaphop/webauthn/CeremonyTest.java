@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.snaphop.webauthn.TestAuthenticator.Assertion;
 import com.snaphop.webauthn.TestAuthenticator.Kind;
 import com.snaphop.webauthn.TestAuthenticator.Registration;
+import com.snaphop.webauthn.WebauthnRelyingParty.RegistrationMediation;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.interfaces.ECPublicKey;
@@ -140,7 +141,8 @@ class CeremonyTest {
     COSE_COORDINATE_SHORT("PUBLIC_KEY: The credential public key's coordinates must be 32 bytes for P256: x is 31, y is 32"),
     COSE_COORDINATE_NOT_BYTES("PUBLIC_KEY: The credential public key's y (-3) is not a byte string"),
     COSE_NO_Y("PUBLIC_KEY: The credential public key has no y (-3)"),
-    COSE_EXTRA_MEMBER("OK"),
+    COSE_EXTRA_MEMBER("PUBLIC_KEY: The credential public key has parameters other than alg and the required public key parameters"),
+    COSE_KEY_NOT_CANONICAL("AUTHENTICATOR_DATA: The authenticator data's credential public key is not CBOR: Not canonical CBOR at byte 71: 5 is written in 2 bytes, more than it needs"),
     COSE_NOT_MAP("PUBLIC_KEY: The credential public key is not a COSE key (a CBOR map): CborArray"),
     COSE_DUPLICATE_MEMBER("AUTHENTICATOR_DATA: The authenticator data's credential public key is not CBOR: Not valid CBOR at byte 148: the key 1 is in the map twice"),
     COSE_NOT_CBOR("AUTHENTICATOR_DATA: The authenticator data's credential public key is not CBOR: Not well-formed CBOR at byte 71: additional information 28 is reserved (major type 7)");
@@ -231,7 +233,11 @@ class CeremonyTest {
         case COSE_COORDINATE_SHORT -> r.cose.put(-2, Arrays.copyOf((byte[]) java.util.Objects.requireNonNull(r.cose.get(-2)), 31));
         case COSE_COORDINATE_NOT_BYTES -> r.cose.put(-3, 0);
         case COSE_NO_Y -> r.cose.remove(-3);
-        case COSE_EXTRA_MEMBER -> r.cose.put(2, new byte[] {1, 2, 3});
+        case COSE_EXTRA_MEMBER -> r.cose.put(-4, new byte[] {1, 2, 3});
+        case COSE_KEY_NOT_CANONICAL -> {
+          byte[] cose = r.publicKeyCose();
+          r.coseBytes = concat(new byte[] {(byte) 0xb8, 5}, Arrays.copyOfRange(cose, 1, cose.length));
+        }
         case COSE_NOT_MAP -> r.coseBytes = TestCbor.encode(List.of(1, 2));
         case COSE_DUPLICATE_MEMBER -> r.coseBytes = concat(new byte[] {(byte) 0xa6}, concat(Arrays.copyOfRange(TestCbor.encode(r.cose), 1, TestCbor.encode(r.cose).length), new byte[] {0x01, 0x02}));
         case COSE_NOT_CBOR -> r.coseBytes = new byte[] {(byte) 0xfc};
@@ -256,7 +262,9 @@ class CeremonyTest {
     WebauthnRelyingParty framed = rp().crossOrigin(WebauthnRelyingParty.CrossOrigin.ALLOW).topOrigin("https://example.com").build();
     Registration r = new Registration(Kind.ES256, random);
     r.clientData.crossOrigin = true;
-    framed.register(r.build(), r.challenge, USER);
+    rp().crossOrigin(WebauthnRelyingParty.CrossOrigin.ALLOW).build().register(r.build(), r.challenge, USER);
+    outcome("CROSS_ORIGIN: The cross-origin client data has no topOrigin to check against the allowed top origins",
+        () -> framed.register(r.build(), r.challenge, USER));
     r.clientData.topOrigin = "https://example.com";
     framed.register(r.build(), r.challenge, USER);
     r.clientData.topOrigin = "https://evil.example";
@@ -265,6 +273,47 @@ class CeremonyTest {
     r.clientData.crossOrigin = false;
     outcome("CROSS_ORIGIN: The client data has a topOrigin, \"https://evil.example\", but crossOrigin is not true",
         () -> framed.register(r.build(), r.challenge, USER));
+  }
+
+  @Test
+  void conditionalRegistration() {
+    Registration r = new Registration(Kind.ES256, new Random(15));
+    r.flags = UV | AT;
+    assertArrayEquals(r.credentialId, RP.register(r.build(), r.challenge, USER, RegistrationMediation.CONDITIONAL).credentialId());
+    outcome("USER_PRESENCE: The user-present flag (UP) is not set", () -> RP.register(r.build(), r.challenge, USER));
+    r.flags = AT;
+    outcome("USER_VERIFICATION: User verification is required, and the user-verified flag (UV) is not set",
+        () -> RP.register(r.build(), r.challenge, USER, RegistrationMediation.CONDITIONAL));
+  }
+
+  @Test
+  void discoverableSignIn() {
+    Random random = new Random(16);
+    Registration r = new Registration(Kind.ES256, random);
+    WebauthnCredential credential = RP.register(r.build(), r.challenge, USER);
+    Assertion a = new Assertion(r, random);
+    assertEquals(credential, RP.signIn(a.build(), a.challenge, credential).credential());
+    outcome("USER_HANDLE: A discoverable sign-in needs a user handle",
+        () -> RP.signInDiscoverable(a.build(), a.challenge, credential));
+    a.userHandle = USER;
+    assertEquals(credential, RP.signInDiscoverable(a.build(), a.challenge, credential).credential());
+  }
+
+  @Test
+  void utf8BomInClientData() {
+    Registration r = new Registration(Kind.ES256, new Random(17));
+    r.clientDataChange = b -> concat(new byte[] {(byte) 0xef, (byte) 0xbb, (byte) 0xbf}, b);
+    assertArrayEquals(r.credentialId, RP.register(r.build(), r.challenge, USER).credentialId());
+  }
+
+  @Test
+  void invalidEd25519PublicPoint() {
+    Registration r = new Registration(Kind.ED25519, new Random(18));
+    byte[] tooLarge = new byte[32];
+    Arrays.fill(tooLarge, (byte) 0xff);
+    r.cose.put(-2, tooLarge);
+    outcome("PUBLIC_KEY: The credential public key is not a usable ED25519 key: y value is too large",
+        () -> RP.register(r.build(), r.challenge, USER));
   }
 
   @Test

@@ -139,7 +139,7 @@ class PartsTest {
     NULL_MISSPELLED("{\"x\":nul}", "!The client data is not JSON at character 5: unexpected 'n'"),
     NOT_A_VALUE("{\"x\":@}", "!The client data is not JSON at character 5: unexpected '@'"),
     NOT_A_VALUE_UNICODE("{\"x\":\u00e9}", "!The client data is not JSON at character 5: unexpected U+00E9"),
-    BYTE_ORDER_MARK("\ufeff{}", "!The client data is not JSON at character 0: unexpected U+FEFF"),
+    BYTE_ORDER_MARK("\ufeff{}", "!The client data has no \"type\""),
     DUPLICATE_DEEP("{\"x\":{\"a\":1,\"a\":2}}", "!The client data is not JSON at character 12: the member \"a\" is there twice"),
     DEEP("[".repeat(32) + "]".repeat(32), "!The client data is not a JSON object"),
     TOO_DEEP("[".repeat(33) + "]".repeat(33), "!The client data is not JSON at character 32: JSON nested deeper than 32"),

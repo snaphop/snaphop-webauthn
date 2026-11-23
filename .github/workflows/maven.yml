@@ -15,4 +15,8 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - run: ./mvnw -B verify
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --prefix test/snaphop-webauthn-test/simplewebauthn
+      - run: ./mvnw -B -Dsimplewebauthn.required=true verify

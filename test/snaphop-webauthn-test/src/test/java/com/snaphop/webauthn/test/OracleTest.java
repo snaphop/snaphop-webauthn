@@ -98,10 +98,10 @@ class OracleTest {
         "Neither oracle checks coordinates are below the prime when registering"),
     COSE_COORDINATE_SHORT("RAR",
         "webauthn4j accepts a coordinate shorter than the curve's size"),
-    COSE_EXTRA_MEMBER("AAA", ""),
+    COSE_EXTRA_MEMBER("RAA", "Neither oracle requires public COSE keys to exclude optional parameters"),
     COSE_DUPLICATE_MEMBER("RAR",
         "webauthn4j's CBOR (Jackson) keeps the last of a key written twice"),
-    COSE_KEY_NOT_CANONICAL("AAA", "");
+    COSE_KEY_NOT_CANONICAL("RAA", "Neither oracle requires the credential public key to use canonical CBOR");
 
     final String expected;
     final String why;
