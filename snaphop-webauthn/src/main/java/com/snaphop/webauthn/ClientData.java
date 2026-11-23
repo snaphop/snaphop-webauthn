@@ -1,6 +1,5 @@
 package com.snaphop.webauthn;
 
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
@@ -27,17 +26,7 @@ record ClientData(String type, String challenge, String origin, boolean crossOri
     if (json.length > MAX_BYTES) {
       throw refuse("The client data is " + json.length + " bytes, more than " + MAX_BYTES);
     }
-    String text;
-    try {
-      text = StandardCharsets.UTF_8.newDecoder()
-          .onMalformedInput(CodingErrorAction.REPORT)
-          .onUnmappableCharacter(CodingErrorAction.REPORT)
-          .decode(ByteBuffer.wrap(json))
-          .toString();
-    } catch (CharacterCodingException e) {
-      throw refuse("The client data is not UTF-8");
-    }
-    Object top = new Json(text).document();
+    Object top = json(json);
     if (!(top instanceof Map<?, ?> map)) {
       throw refuse("The client data is not a JSON object");
     }
@@ -50,6 +39,21 @@ record ClientData(String type, String challenge, String origin, boolean crossOri
     }
     @Nullable String topOrigin = map.containsKey("topOrigin") ? string(map, "topOrigin") : null;
     return new ClientData(type, challenge, origin, Boolean.TRUE.equals(cross), topOrigin);
+  }
+
+  /// Any JSON document, as UTF-8 bytes.
+  static Object json(byte[] json) {
+    String text;
+    try {
+      text = StandardCharsets.UTF_8.newDecoder()
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .onUnmappableCharacter(CodingErrorAction.REPORT)
+          .decode(ByteBuffer.wrap(json))
+          .toString();
+    } catch (CharacterCodingException e) {
+      throw refuse("The client data is not UTF-8");
+    }
+    return new Json(text).document();
   }
 
   private static String string(Map<?, ?> map, String name) {
@@ -68,11 +72,16 @@ record ClientData(String type, String challenge, String origin, boolean crossOri
   }
 
   /// A strict JSON (RFC 8259) reader: objects as maps in order, arrays as
-  /// lists, numbers as BigDecimal, `null` as a marker. Refuses a member
-  /// twice, nesting deeper than 32, and anything after the value.
+  /// lists, `null` as a marker. Numbers are checked against JSON's grammar
+  /// and kept as their text, never converted: nothing in the client data is
+  /// a number, and converting `1e999999999` is how parsers get hurt. Refuses
+  /// a member twice, nesting deeper than 32, and anything after the value.
   static final class Json {
 
     static final Object NULL = new Object();
+
+    /// A number, as written.
+    record JsonNumber(String text) {}
     private static final int MAX_DEPTH = 32;
 
     private final String in;
@@ -265,7 +274,7 @@ record ClientData(String type, String challenge, String origin, boolean crossOri
           pos++;
         }
       }
-      return new BigDecimal(in.substring(start, pos));
+      return new JsonNumber(in.substring(start, pos));
     }
 
     private Object literal(String word, Object value) {
