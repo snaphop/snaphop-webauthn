@@ -23,7 +23,7 @@ final class Signatures {
         case ES256 -> ecdsa(key, "SHA256withECDSA", data, signature);
         case ES384 -> ecdsa(key, "SHA384withECDSA", data, signature);
         case ES512 -> ecdsa(key, "SHA512withECDSA", data, signature);
-        case EDDSA, ED25519 -> eddsa(key, data, signature);
+        case EDDSA, ED25519, ED448 -> eddsa(key, data, signature);
         case RS256 -> jdk(key, Signature.getInstance("SHA256withRSA"), data, signature);
         case PS256 -> {
           Signature s = Signature.getInstance("RSASSA-PSS");

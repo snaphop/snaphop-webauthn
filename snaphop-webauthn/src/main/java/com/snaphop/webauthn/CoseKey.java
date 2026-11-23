@@ -156,7 +156,9 @@ record CoseKey(WebauthnAlgorithm algorithm, PublicKey publicKey, Curve curve) {
     } else {
       throw refuse("The credential public key's OKP curve " + crv + " is not one this library reads (6 Ed25519, 7 Ed448)");
     }
-    boolean fits = algorithm == WebauthnAlgorithm.EDDSA || (algorithm == WebauthnAlgorithm.ED25519 && curve == Curve.ED25519);
+    boolean fits = algorithm == WebauthnAlgorithm.EDDSA
+        || (algorithm == WebauthnAlgorithm.ED25519 && curve == Curve.ED25519)
+        || (algorithm == WebauthnAlgorithm.ED448 && curve == Curve.ED448);
     if (!fits) {
       throw refuse("The credential public key's algorithm " + algorithm + " does not go with its curve " + curve);
     }

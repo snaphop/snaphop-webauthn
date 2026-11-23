@@ -135,7 +135,8 @@ final class AuthenticatorData {
       pos = item.end();
     }
     if (pos != data.length) {
-      throw refuse("The authenticator data has " + (data.length - pos) + " bytes after its last part" + ((flags & ED) == 0 ? " (the ED flag is not set)" : ""));
+      int left = data.length - pos;
+      throw refuse("The authenticator data has " + left + (left == 1 ? " byte" : " bytes") + " after its last part" + ((flags & ED) == 0 ? " (the ED flag is not set)" : ""));
     }
     return new AuthenticatorData(rpIdHash, flags, signCount, attested, extensions);
   }

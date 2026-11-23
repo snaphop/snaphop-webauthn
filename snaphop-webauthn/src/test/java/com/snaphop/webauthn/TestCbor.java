@@ -50,7 +50,17 @@ final class TestCbor {
   }
 
   /// Bytes written as they are: CBOR made some other way.
-  record Raw(byte[] bytes) {}
+  static final class Raw {
+    private final byte[] bytes;
+
+    Raw(byte[] bytes) {
+      this.bytes = bytes.clone();
+    }
+
+    byte[] bytes() {
+      return bytes.clone();
+    }
+  }
 
   private static void integer(ByteArrayOutputStream out, long v) {
     if (v >= 0) {

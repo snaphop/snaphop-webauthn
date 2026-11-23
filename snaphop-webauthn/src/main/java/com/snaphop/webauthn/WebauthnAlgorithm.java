@@ -18,8 +18,10 @@ public enum WebauthnAlgorithm {
   ES512(-36),
   /// EdDSA, COSE `-8`: Ed25519 or Ed448, by the key's curve.
   EDDSA(-8),
-  /// Ed25519, COSE `-19` (fully specified).
+  /// Ed25519, COSE `-19` (fully specified, RFC 9864).
   ED25519(-19),
+  /// Ed448, COSE `-53` (fully specified, RFC 9864).
+  ED448(-53),
   /// RSASSA-PKCS1-v1_5 with SHA-256, COSE `-257`.
   RS256(-257),
   /// RSASSA-PSS with SHA-256, COSE `-37`.

@@ -45,6 +45,7 @@ final class TestAuthenticator {
     ED25519(WebauthnAlgorithm.EDDSA, "Ed25519", 6, 32),
     ED25519_FULLY_SPECIFIED(WebauthnAlgorithm.ED25519, "Ed25519", 6, 32),
     ED448(WebauthnAlgorithm.EDDSA, "Ed448", 7, 57),
+    ED448_FULLY_SPECIFIED(WebauthnAlgorithm.ED448, "Ed448", 7, 57),
     RS256(WebauthnAlgorithm.RS256, "RSA", 0, 0),
     PS256(WebauthnAlgorithm.PS256, "RSA", 0, 0);
 
@@ -96,7 +97,7 @@ final class TestAuthenticator {
         m.put(-2, fixed(pub.getW().getAffineX(), kind.size));
         m.put(-3, fixed(pub.getW().getAffineY(), kind.size));
       }
-      case ED25519, ED25519_FULLY_SPECIFIED, ED448 -> {
+      case ED25519, ED25519_FULLY_SPECIFIED, ED448, ED448_FULLY_SPECIFIED -> {
         byte[] spki = keys.getPublic().getEncoded();
         m.put(1, 1);
         m.put(3, kind.algorithm.coseId());
@@ -145,7 +146,7 @@ final class TestAuthenticator {
         case ES384 -> Signature.getInstance("SHA384withECDSA");
         case ES512 -> Signature.getInstance("SHA512withECDSA");
         case ED25519, ED25519_FULLY_SPECIFIED -> Signature.getInstance("Ed25519");
-        case ED448 -> Signature.getInstance("Ed448");
+        case ED448, ED448_FULLY_SPECIFIED -> Signature.getInstance("Ed448");
         case RS256 -> Signature.getInstance("SHA256withRSA");
         case PS256 -> {
           Signature p = Signature.getInstance("RSASSA-PSS");
