@@ -31,8 +31,8 @@ import org.jspecify.annotations.Nullable;
 /// // given to navigator.credentials.create().
 /// WebauthnCredential credential = rp.register(WebauthnRegistration.of(clientDataJson, attestationObject), challenge, userHandle);
 ///
-/// // Signing in: look the stored credential up by the response's credential ID.
-/// WebauthnSignIn signIn = rp.signIn(assertion, challenge, stored);
+/// // Discoverable sign-in: look up the credential by its ID and user handle.
+/// WebauthnSignIn signIn = rp.signInDiscoverable(assertion, challenge, stored);
 /// store(signIn.credential());
 /// ```
 ///
@@ -59,9 +59,19 @@ public sealed interface WebauthnRelyingParty permits DefaultWebauthnRelyingParty
     /// `crossOrigin` must be absent or false, and `topOrigin` absent. The
     /// default.
     REFUSE,
-    /// `crossOrigin` may be true. A `topOrigin`, when there is one, must
-    /// be one of [Builder#topOrigin(String)]'s.
+    /// `crossOrigin` may be true. With a configured top-origin allowlist,
+    /// cross-origin client data must include a matching `topOrigin`. With
+    /// an empty allowlist, only legacy client data without a `topOrigin`
+    /// is accepted for cross-origin ceremonies.
     ALLOW
+  }
+
+  /// The mediation mode in the server's registration request.
+  enum RegistrationMediation {
+    /// An ordinary registration, where user presence is required.
+    STANDARD,
+    /// A conditional registration, which may omit the user-present flag.
+    CONDITIONAL
   }
 
   /// Which attestation statements a registration may carry.
@@ -101,7 +111,9 @@ public sealed interface WebauthnRelyingParty permits DefaultWebauthnRelyingParty
   /// @return the RP ID, such as `example.org`
   String id();
 
-  /// Checks a registration and returns the credential to store.
+  /// Checks a registration with ordinary mediation and returns the
+  /// credential to store. Persist it using an insert that rejects a
+  /// duplicate credential ID across all accounts for this RP.
   ///
   /// @param response what `navigator.credentials.create()` returned
   /// @param challenge the options' `challenge`
@@ -112,15 +124,40 @@ public sealed interface WebauthnRelyingParty permits DefaultWebauthnRelyingParty
   ///     than 64 bytes
   WebauthnCredential register(WebauthnRegistration response, byte[] challenge, byte[] userHandle);
 
+  /// Checks a registration using the mediation mode saved with its
+  /// challenge. Persist the returned credential using an insert that
+  /// rejects a duplicate credential ID across all accounts for this RP.
+  ///
+  /// @param response what `navigator.credentials.create()` returned
+  /// @param challenge the options' `challenge`
+  /// @param userHandle the options' `user.id`, 1 to 64 bytes
+  /// @param mediation the server's registration request mediation mode
+  /// @return the credential
+  /// @throws WebauthnException if the registration is refused
+  /// @throws IllegalArgumentException if the user handle is empty or longer than 64 bytes
+  WebauthnCredential register(WebauthnRegistration response, byte[] challenge, byte[] userHandle, RegistrationMediation mediation);
+
   /// Checks a sign-in against the stored credential its credential ID
   /// names.
   ///
   /// @param response what `navigator.credentials.get()` returned
   /// @param challenge the options' `challenge`
-  /// @param credential the stored credential
+  /// @param credential the stored credential, selected from the identified
+  ///     account and checked against the request's `allowCredentials` when
+  ///     specified
   /// @return what was accepted, with the credential to store
   /// @throws WebauthnException if the sign-in is refused
   WebauthnSignIn signIn(WebauthnAssertion response, byte[] challenge, WebauthnCredential credential);
+
+  /// Checks a sign-in initiated without an identified user. The response
+  /// must contain the user handle belonging to the stored credential.
+  ///
+  /// @param response what `navigator.credentials.get()` returned
+  /// @param challenge the options' `challenge`
+  /// @param credential the stored credential for the response's ID and user handle
+  /// @return what was accepted, with the credential to store
+  /// @throws WebauthnException if the sign-in is refused
+  WebauthnSignIn signInDiscoverable(WebauthnAssertion response, byte[] challenge, WebauthnCredential credential);
 
   /// Configures a [WebauthnRelyingParty].
   final class Builder {
@@ -284,6 +321,12 @@ final class DefaultWebauthnRelyingParty implements WebauthnRelyingParty {
 
   @Override
   public WebauthnCredential register(WebauthnRegistration response, byte[] challenge, byte[] userHandle) {
+    return register(response, challenge, userHandle, RegistrationMediation.STANDARD);
+  }
+
+  @Override
+  public WebauthnCredential register(WebauthnRegistration response, byte[] challenge, byte[] userHandle, RegistrationMediation mediation) {
+    Objects.requireNonNull(mediation);
     if (userHandle.length == 0 || userHandle.length > 64) {
       throw new IllegalArgumentException("A user handle must be 1 to 64 bytes: " + userHandle.length);
     }
@@ -309,7 +352,7 @@ final class DefaultWebauthnRelyingParty implements WebauthnRelyingParty {
       throw AuthenticatorData.refuse("The attestation object has no \"authData\" byte string");
     }
     AuthenticatorData data = AuthenticatorData.read(authDataBytes.bytes());
-    checkCommon(data);
+    checkCommon(data, mediation == RegistrationMediation.STANDARD);
     AuthenticatorData.Attested attested = data.attested();
     if (attested == null) {
       throw AuthenticatorData.refuse("The authenticator data has no attested credential data (the AT flag is not set)");
@@ -357,7 +400,7 @@ final class DefaultWebauthnRelyingParty implements WebauthnRelyingParty {
     if (data.attested() != null) {
       throw AuthenticatorData.refuse("The authenticator data of a sign-in has attested credential data (the AT flag is set)");
     }
-    checkCommon(data);
+    checkCommon(data, true);
     boolean eligible = data.has(AuthenticatorData.BE);
     if (eligible != credential.backupEligible()) {
       throw new WebauthnException(WebauthnException.Reason.BACKUP,
@@ -386,6 +429,14 @@ final class DefaultWebauthnRelyingParty implements WebauthnRelyingParty {
     return new WebauthnSignIn(credential.seen(Math.max(stored, now), data.has(AuthenticatorData.BS)), data.has(AuthenticatorData.UV), count);
   }
 
+  @Override
+  public WebauthnSignIn signInDiscoverable(WebauthnAssertion response, byte[] challenge, WebauthnCredential credential) {
+    if (response.userHandleSharedOrNull() == null) {
+      throw new WebauthnException(WebauthnException.Reason.USER_HANDLE, "A discoverable sign-in needs a user handle");
+    }
+    return signIn(response, challenge, credential);
+  }
+
   private void clientData(byte[] json, String type, byte[] challenge) {
     ClientData c = ClientData.read(json);
     if (!c.type().equals(type)) {
@@ -403,6 +454,9 @@ final class DefaultWebauthnRelyingParty implements WebauthnRelyingParty {
       throw new WebauthnException(WebauthnException.Reason.CROSS_ORIGIN, "The response came from a frame of another origin (crossOrigin is true)");
     }
     String top = c.topOrigin();
+    if (top == null && c.crossOrigin() && !topOrigins.isEmpty()) {
+      throw new WebauthnException(WebauthnException.Reason.CROSS_ORIGIN, "The cross-origin client data has no topOrigin to check against the allowed top origins");
+    }
     if (top != null) {
       if (!c.crossOrigin()) {
         throw new WebauthnException(WebauthnException.Reason.CROSS_ORIGIN, "The client data has a topOrigin, \"" + top + "\", but crossOrigin is not true");
@@ -413,11 +467,11 @@ final class DefaultWebauthnRelyingParty implements WebauthnRelyingParty {
     }
   }
 
-  private void checkCommon(AuthenticatorData data) {
+  private void checkCommon(AuthenticatorData data, boolean requireUserPresence) {
     if (!MessageDigest.isEqual(data.rpIdHash(), rpIdHash)) {
       throw new WebauthnException(WebauthnException.Reason.RP_ID, "The authenticator data is for another RP ID than \"" + id + "\"");
     }
-    if (!data.has(AuthenticatorData.UP)) {
+    if (requireUserPresence && !data.has(AuthenticatorData.UP)) {
       throw new WebauthnException(WebauthnException.Reason.USER_PRESENCE, "The user-present flag (UP) is not set");
     }
     if (userVerification == UserVerification.REQUIRED && !data.has(AuthenticatorData.UV)) {

@@ -11,6 +11,7 @@ import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.Signature;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
@@ -30,6 +31,7 @@ import org.jspecify.annotations.Nullable;
 record CoseKey(WebauthnAlgorithm algorithm, PublicKey publicKey, Curve curve) {
 
   static final CborReader CBOR = CborReader.builder().maxDepth(16).build();
+  static final CborReader REGISTRATION_CBOR = CborReader.builder().maxDepth(16).mode(CborReader.Mode.CANONICAL).build();
 
   /// The curve, or NONE for RSA.
   enum Curve {
@@ -69,10 +71,14 @@ record CoseKey(WebauthnAlgorithm algorithm, PublicKey publicKey, Curve curve) {
     } catch (CborParseException e) {
       throw refuse("The credential public key is not CBOR: " + e.getMessage(), e);
     }
-    return read(value);
+    return read(value, false);
   }
 
-  static CoseKey read(CborValue value) {
+  static CoseKey readRegistration(CborValue value) {
+    return read(value, true);
+  }
+
+  private static CoseKey read(CborValue value, boolean publicParametersOnly) {
     if (!(value instanceof CborMap map)) {
       throw refuse("The credential public key is not a COSE key (a CBOR map): " + value.getClass().getSimpleName());
     }
@@ -82,14 +88,21 @@ record CoseKey(WebauthnAlgorithm algorithm, PublicKey publicKey, Curve curve) {
     if (algorithm == null) {
       throw refuse("The credential public key's algorithm " + alg + " is not one this library checks");
     }
+    CoseKey key;
     if (kty == KTY_EC2) {
-      return ec2(map, algorithm);
+      key = ec2(map, algorithm);
     } else if (kty == KTY_OKP) {
-      return okp(map, algorithm);
+      key = okp(map, algorithm);
     } else if (kty == KTY_RSA) {
-      return rsa(map, algorithm);
+      key = rsa(map, algorithm);
+    } else {
+      throw refuse("The credential public key's key type " + kty + " is not one this library reads (1 OKP, 2 EC2, 3 RSA)");
     }
-    throw refuse("The credential public key's key type " + kty + " is not one this library reads (1 OKP, 2 EC2, 3 RSA)");
+    int requiredParameters = kty == KTY_EC2 ? 5 : 4;
+    if (publicParametersOnly && map.size() != requiredParameters) {
+      throw refuse("The credential public key has parameters other than alg and the required public key parameters");
+    }
+    return key;
   }
 
   private static CoseKey ec2(CborMap map, WebauthnAlgorithm algorithm) {
@@ -170,6 +183,8 @@ record CoseKey(WebauthnAlgorithm algorithm, PublicKey publicKey, Curve curve) {
     System.arraycopy(x, 0, spki, prefix.length, x.length);
     try {
       PublicKey key = KeyFactory.getInstance(curve.jdkName).generatePublic(new X509EncodedKeySpec(spki));
+      // The JDK key factory can accept encodings that its signature verifier cannot use.
+      Signature.getInstance(curve.jdkName).initVerify(key);
       return new CoseKey(algorithm, key, curve);
     } catch (GeneralSecurityException e) {
       throw refuse("The credential public key is not a usable " + curve + " key: " + e.getMessage(), e);

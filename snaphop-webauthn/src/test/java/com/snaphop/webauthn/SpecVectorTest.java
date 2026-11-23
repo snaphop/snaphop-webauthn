@@ -24,18 +24,16 @@ class SpecVectorTest {
 
   static final Path VECTORS = Path.of("../test/corpus/webauthn-spec/test-vectors.txt");
 
-  static final WebauthnRelyingParty RP = WebauthnRelyingParty.builder()
-      .id("example.org")
-      .origin("https://example.org")
-      .crossOrigin(WebauthnRelyingParty.CrossOrigin.ALLOW)
-      .topOrigin("https://example.com")
-      // The vectors set UV at random.
-      .userVerification(WebauthnRelyingParty.UserVerification.PREFERRED)
-      .algorithms(WebauthnAlgorithm.values())
-      // Packed, TPM, Android Key, Apple and FIDO U2F statements are accepted
-      // without being checked.
-      .attestation(WebauthnRelyingParty.Attestation.ANY_UNVERIFIED)
-      .build();
+  static WebauthnRelyingParty.Builder rpBuilder(Vector vector) {
+    WebauthnRelyingParty.Builder builder = WebauthnRelyingParty.builder()
+        .id("example.org").origin("https://example.org")
+        .crossOrigin(WebauthnRelyingParty.CrossOrigin.ALLOW)
+        // The vectors set UV at random.
+        .userVerification(WebauthnRelyingParty.UserVerification.PREFERRED)
+        .algorithms(WebauthnAlgorithm.values());
+    // Section 16.4 uses the legacy cross-origin form without a topOrigin.
+    return vector == Vector.CROSS_ORIGIN ? builder : builder.topOrigin("https://example.com");
+  }
 
   /// What each section is: its algorithm and attestation format.
   enum Vector {
@@ -89,8 +87,9 @@ class SpecVectorTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("vectors")
   void vector(Vector v, Map<String, byte[]> values) {
+    WebauthnRelyingParty rp = rpBuilder(v).attestation(WebauthnRelyingParty.Attestation.ANY_UNVERIFIED).build();
     byte[] user = "user".getBytes(StandardCharsets.UTF_8);
-    WebauthnCredential c = RP.register(
+    WebauthnCredential c = rp.register(
         WebauthnRegistration.of(get(values, "registration.clientDataJSON"), get(values, "registration.attestationObject")),
         get(values, "registration.challenge"), user);
     assertEquals(v.algorithm, c.algorithm());
@@ -105,14 +104,14 @@ class SpecVectorTest {
         .authenticatorData(authenticatorData)
         .signature(get(values, "authentication.signature"))
         .build();
-    WebauthnSignIn signIn = RP.signIn(assertion, get(values, "authentication.challenge"), c);
+    WebauthnSignIn signIn = rp.signIn(assertion, get(values, "authentication.challenge"), c);
     assertEquals(WebauthnSignIn.SignCount.ZERO, signIn.signCount());
     assertEquals((authenticatorData[32] & 0x04) != 0, signIn.userVerified());
     assertEquals((authenticatorData[32] & 0x10) != 0, signIn.credential().backedUp());
 
     // The sign-in fails with a challenge it wasn't given, and with any bit
     // of its signature flipped.
-    WebauthnException challenge = assertThrows(WebauthnException.class, () -> RP.signIn(assertion, get(values, "registration.challenge"), c));
+    WebauthnException challenge = assertThrows(WebauthnException.class, () -> rp.signIn(assertion, get(values, "registration.challenge"), c));
     assertEquals(WebauthnException.Reason.CHALLENGE, challenge.reason());
     byte[] signature = get(values, "authentication.signature");
     for (int bit = 0; bit < signature.length * 8; bit += 7) {
@@ -124,14 +123,12 @@ class SpecVectorTest {
           .authenticatorData(authenticatorData)
           .signature(flipped)
           .build();
-      WebauthnException e = assertThrows(WebauthnException.class, () -> RP.signIn(bad, get(values, "authentication.challenge"), c));
+      WebauthnException e = assertThrows(WebauthnException.class, () -> rp.signIn(bad, get(values, "authentication.challenge"), c));
       assertEquals(WebauthnException.Reason.SIGNATURE, e.reason());
     }
 
     // Only "none" is accepted by a relying party left at its default.
-    WebauthnRelyingParty strict = WebauthnRelyingParty.builder().id("example.org").origin("https://example.org")
-        .crossOrigin(WebauthnRelyingParty.CrossOrigin.ALLOW).topOrigin("https://example.com")
-        .userVerification(WebauthnRelyingParty.UserVerification.PREFERRED).algorithms(WebauthnAlgorithm.values()).build();
+    WebauthnRelyingParty strict = rpBuilder(v).build();
     WebauthnRegistration registration = WebauthnRegistration.of(get(values, "registration.clientDataJSON"), get(values, "registration.attestationObject"));
     if (v.format.equals("none")) {
       strict.register(registration, get(values, "registration.challenge"), user);

@@ -109,13 +109,13 @@ final class AuthenticatorData {
       pos += idLength;
       CborReader.Item key;
       try {
-        key = CoseKey.CBOR.readPrefix(data, pos);
+        key = CoseKey.REGISTRATION_CBOR.readPrefix(data, pos);
       } catch (CborParseException e) {
         throw refuse("The authenticator data's credential public key is not CBOR: " + e.getMessage(), e);
       }
       byte[] cose = Arrays.copyOfRange(data, pos, key.end());
       pos = key.end();
-      attested = new Attested(aaguid, credentialId, cose, CoseKey.read(key.value()));
+      attested = new Attested(aaguid, credentialId, cose, CoseKey.readRegistration(key.value()));
     }
     CborMap extensions = null;
     if ((flags & ED) != 0) {

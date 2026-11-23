@@ -1,0 +1,10 @@
+{
+  "name": "snaphop-webauthn-reference-tests",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@simplewebauthn/server": "14.1.0"
+  }
+}

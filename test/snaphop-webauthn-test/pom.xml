@@ -10,7 +10,7 @@
   </parent>
   <artifactId>snaphop-webauthn-test</artifactId>
   <name>snaphop-webauthn-test</name>
-  <description>End to end tests of snaphop-webauthn, with webauthn4j and Yubico's java-webauthn-server as oracles</description>
+  <description>End to end tests of snaphop-webauthn, with webauthn4j, Yubico's java-webauthn-server and SimpleWebAuthn as oracles</description>
 
   <dependencies>
     <dependency>
@@ -21,6 +21,12 @@
     <dependency>
       <groupId>org.jspecify</groupId>
       <artifactId>jspecify</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson2.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

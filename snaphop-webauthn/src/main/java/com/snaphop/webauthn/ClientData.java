@@ -5,6 +5,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,8 @@ record ClientData(String type, String challenge, String origin, boolean crossOri
     } catch (CharacterCodingException e) {
       throw refuse("The client data is not UTF-8");
     }
-    return new Json(text).document();
+    // WebAuthn uses the Encoding Standard's UTF-8 decode, which strips one BOM.
+    return new Json(text.startsWith("\uFEFF") ? text.substring(1) : text).document();
   }
 
   private static String string(Map<?, ?> map, String name) {
@@ -222,11 +224,11 @@ record ClientData(String type, String challenge, String origin, boolean crossOri
             }
             int cp = 0;
             for (int i = 0; i < 4; i++) {
-              int d = Character.digit(in.charAt(pos + i), 16);
-              if (d < 0) {
+              char digit = in.charAt(pos + i);
+              if (!HexFormat.isHexDigit(digit)) {
                 throw error("a \\u escape that is not four hex digits");
               }
-              cp = cp * 16 + d;
+              cp = cp * 16 + HexFormat.fromHexDigit(digit);
             }
             pos += 4;
             b.append((char) cp);
