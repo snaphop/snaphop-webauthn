@@ -10,10 +10,9 @@ and their only runtime dependency is the JDK.
 
 ## Status
 
-Experimental, not yet released. Written for
-[agentic-todo](https://github.com/agentgt/agentic-todo) (Sage Mage), whose server needs
-passkeys without the Jackson, Guava and reflection the existing libraries bring. To be reviewed by
-Codex before anything depends on it. Expect the API to change before 1.0.
+Experimental, not yet released. Written for servers that need passkeys without the Jackson, Guava
+and reflection the existing libraries bring. To be reviewed before anything depends on it. Expect
+the API to change before 1.0.
 
 ## Why another one
 
