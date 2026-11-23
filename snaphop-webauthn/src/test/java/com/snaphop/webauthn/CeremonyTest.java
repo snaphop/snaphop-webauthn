@@ -276,6 +276,13 @@ class CeremonyTest {
     r.attStmt.put("alg", -7);
     r.attStmt.put("sig", new byte[] {1});
     assertEquals("packed", any.register(r.build(), r.challenge, USER).attestationFormat());
+    for (String format : List.of("tpm", "android-key", "android-safetynet", "fido-u2f", "apple", "compound")) {
+      r.fmt = format;
+      assertEquals(format, any.register(r.build(), r.challenge, USER).attestationFormat());
+    }
+    r.fmt = "nne";
+    outcome("ATTESTATION: The attestation format \"nne\" is not one of WebAuthn's: packed, tpm, android-key, android-safetynet, fido-u2f, apple, compound, none",
+        () -> any.register(r.build(), r.challenge, USER));
     Registration none = new Registration(Kind.ES256, random);
     none.attStmt.put("x", 1);
     outcome("ATTESTATION: The \"none\" attestation statement is not empty: {\"x\": 1}", () -> any.register(none.build(), none.challenge, USER));

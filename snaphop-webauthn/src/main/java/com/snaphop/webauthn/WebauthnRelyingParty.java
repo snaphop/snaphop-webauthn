@@ -73,8 +73,10 @@ public sealed interface WebauthnRelyingParty permits DefaultWebauthnRelyingParty
     /// Only the `none` format, with an empty statement. The default, and
     /// what browsers send when the options ask for `"attestation": "none"`.
     NONE,
-    /// Any format, recorded in [WebauthnCredential#attestationFormat()]
-    /// and not checked. A `none` statement must still be empty.
+    /// Any format in the WebAuthn registry (`packed`, `tpm`,
+    /// `android-key`, `android-safetynet`, `fido-u2f`, `apple`, `compound`
+    /// and `none`), recorded in [WebauthnCredential#attestationFormat()] and
+    /// not checked. A `none` statement must still be empty.
     ANY_UNVERIFIED
   }
 
@@ -277,6 +279,9 @@ final class DefaultWebauthnRelyingParty implements WebauthnRelyingParty {
 
   private static final CborReader CBOR = CborReader.builder().maxDepth(16).build();
 
+  /// The IANA registry of attestation statement formats, in its order.
+  private static final List<String> FORMATS = List.of("packed", "tpm", "android-key", "android-safetynet", "fido-u2f", "apple", "compound", "none");
+
   @Override
   public WebauthnCredential register(WebauthnRegistration response, byte[] challenge, byte[] userHandle) {
     if (userHandle.length == 0 || userHandle.length > 64) {
@@ -323,6 +328,9 @@ final class DefaultWebauthnRelyingParty implements WebauthnRelyingParty {
     } else if (attestation == Attestation.NONE) {
       throw new WebauthnException(WebauthnException.Reason.ATTESTATION,
           "The attestation format \"" + format + "\" is not \"none\", the only one this relying party accepts");
+    } else if (!FORMATS.contains(format)) {
+      throw new WebauthnException(WebauthnException.Reason.ATTESTATION,
+          "The attestation format \"" + format + "\" is not one of WebAuthn's: " + String.join(", ", FORMATS));
     }
     return WebauthnCredential.builder(attested.credentialId(), attested.publicKeyCose(), userHandle)
         .signCount(data.signCount())
