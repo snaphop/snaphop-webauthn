@@ -120,7 +120,7 @@ record DefaultCborReader(CborReader.Mode mode, int maxDepth) implements CborRead
     Decoder d = new Decoder(bytes, 0, this);
     CborValue value = d.item(0);
     if (d.pos != bytes.length) {
-      throw d.notWellFormed(d.pos, (bytes.length - d.pos) + " bytes after the item");
+      throw d.notWellFormed(d.pos, Decoder.count(bytes.length - d.pos, "byte", "bytes") + " after the item");
     }
     return value;
   }
@@ -206,7 +206,7 @@ final class Decoder {
     long length = argumentLong(start, info);
     long left = (long) in.length - pos;
     if (Long.compareUnsigned(length, left) > 0) {
-      throw notWellFormed(start, what(major) + " of " + Long.toUnsignedString(length) + " " + unit(major) + ", but only " + left + " bytes are left");
+      throw notWellFormed(start, what(major) + " of " + unsignedCount(length, major) + ", but only " + count(left, "byte is", "bytes are") + " left");
     }
     return (int) length;
   }
@@ -220,12 +220,18 @@ final class Decoder {
     };
   }
 
-  private static String unit(int major) {
-    return switch (major) {
-      case 2, 3 -> "bytes";
-      case 4 -> "items";
-      default -> "entries";
+  private static String unsignedCount(long n, int major) {
+    String number = Long.toUnsignedString(n);
+    boolean one = n == 1;
+    return number + " " + switch (major) {
+      case 2, 3 -> one ? "byte" : "bytes";
+      case 4 -> one ? "item" : "items";
+      default -> one ? "entry" : "entries";
     };
+  }
+
+  static String count(long n, String one, String many) {
+    return n + " " + (n == 1 ? one : many);
   }
 
   private byte[] take(int start, int length, String what) {
@@ -317,7 +323,7 @@ final class Decoder {
       long n = argumentLong(start, info);
       long left = (long) in.length - pos;
       if (Long.compareUnsigned(n, left / 2) > 0) {
-        throw notWellFormed(start, "a map of " + Long.toUnsignedString(n) + " entries, but only " + left + " bytes are left");
+        throw notWellFormed(start, "a map of " + unsignedCount(n, 5) + ", but only " + count(left, "byte is", "bytes are") + " left");
       }
       count = (int) n;
     }

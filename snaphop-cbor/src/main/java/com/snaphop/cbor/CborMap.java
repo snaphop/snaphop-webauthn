@@ -9,7 +9,8 @@ import org.jspecify.annotations.Nullable;
 /// A map: major type 5, its entries in the order they were written.
 ///
 /// Keys are unique: [CborReader] refuses a map with the same key twice, and
-/// so does this constructor.
+/// so does this constructor. Two maps are equal when they have the same
+/// entries in any order: in CBOR's data model a map has no order.
 ///
 /// @param entries the entries, in order
 public record CborMap(List<Entry> entries) implements CborValue {
@@ -26,6 +27,28 @@ public record CborMap(List<Entry> entries) implements CborValue {
         throw new IllegalArgumentException("The key " + e.key() + " is in the map twice");
       }
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof CborMap other) || other.entries.size() != entries.size()) {
+      return false;
+    }
+    for (Entry e : entries) {
+      if (!e.value().equals(other.getOrNull(e.key()))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 0;
+    for (Entry e : entries) {
+      h += e.key().hashCode() ^ e.value().hashCode();
+    }
+    return h;
   }
 
   /// One key and its value.

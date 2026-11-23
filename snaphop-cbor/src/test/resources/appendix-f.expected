@@ -1,0 +1,95 @@
+# What snaphop-cbor says about each of RFC 8949's not-well-formed examples (test/corpus/rfc8949/appendix-f.txt), in order.
+18	Not well-formed CBOR at byte 1: the input ends before the argument
+19	Not well-formed CBOR at byte 1: the input ends before the argument
+1a	Not well-formed CBOR at byte 1: the input ends before the argument
+1b	Not well-formed CBOR at byte 1: the input ends before the argument
+1901	Not well-formed CBOR at byte 2: the input ends before the argument
+1a0102	Not well-formed CBOR at byte 3: the input ends before the argument
+1b01020304050607	Not well-formed CBOR at byte 8: the input ends before the argument
+38	Not well-formed CBOR at byte 1: the input ends before the argument
+58	Not well-formed CBOR at byte 1: the input ends before the argument
+78	Not well-formed CBOR at byte 1: the input ends before the argument
+98	Not well-formed CBOR at byte 1: the input ends before the argument
+9a01ff00	Not well-formed CBOR at byte 4: the input ends before the argument
+b8	Not well-formed CBOR at byte 1: the input ends before the argument
+d8	Not well-formed CBOR at byte 1: the input ends before the argument
+f8	Not well-formed CBOR at byte 1: the input ends before a simple value
+f900	Not well-formed CBOR at byte 2: the input ends before a float
+fa0000	Not well-formed CBOR at byte 3: the input ends before a float
+fb000000	Not well-formed CBOR at byte 4: the input ends before a float
+41	Not well-formed CBOR at byte 0: a byte string of 1 byte, but only 0 bytes are left
+61	Not well-formed CBOR at byte 0: a text string of 1 byte, but only 0 bytes are left
+5affffffff00	Not well-formed CBOR at byte 0: a byte string of 4294967295 bytes, but only 1 byte is left
+5bffffffffffffffff010203	Not well-formed CBOR at byte 0: a byte string of 18446744073709551615 bytes, but only 3 bytes are left
+7affffffff00	Not well-formed CBOR at byte 0: a text string of 4294967295 bytes, but only 1 byte is left
+7b7fffffffffffffff010203	Not well-formed CBOR at byte 0: a text string of 9223372036854775807 bytes, but only 3 bytes are left
+81	Not well-formed CBOR at byte 0: an array of 1 item, but only 0 bytes are left
+818181818181818181	Not well-formed CBOR at byte 8: an array of 1 item, but only 0 bytes are left
+8200	Not well-formed CBOR at byte 0: an array of 2 items, but only 1 byte is left
+a1	Not well-formed CBOR at byte 0: a map of 1 entry, but only 0 bytes are left
+a20102	Not well-formed CBOR at byte 0: a map of 2 entries, but only 2 bytes are left
+a100	Not well-formed CBOR at byte 0: a map of 1 entry, but only 1 byte is left
+a2000000	Not well-formed CBOR at byte 0: a map of 2 entries, but only 3 bytes are left
+c0	Not well-formed CBOR at byte 1: the input ends before an item
+5f4100	Not well-formed CBOR at byte 3: the input ends before a chunk or a break
+7f6100	Not well-formed CBOR at byte 3: the input ends before a chunk or a break
+9f	Not well-formed CBOR at byte 1: the input ends before a break
+9f0102	Not well-formed CBOR at byte 3: the input ends before a break
+bf	Not well-formed CBOR at byte 1: the input ends before a break
+bf01020102	Not valid CBOR at byte 3: the key 1 is in the map twice
+819f	Not well-formed CBOR at byte 2: the input ends before a break
+9f8000	Not well-formed CBOR at byte 3: the input ends before a break
+9f9f9f9f9fffffffff	Not well-formed CBOR at byte 9: the input ends before a break
+9f819f819f9fffffff	Not well-formed CBOR at byte 9: the input ends before a break
+1c	Not well-formed CBOR at byte 0: additional information 28 is reserved (major type 0)
+1d	Not well-formed CBOR at byte 0: additional information 29 is reserved (major type 0)
+1e	Not well-formed CBOR at byte 0: additional information 30 is reserved (major type 0)
+3c	Not well-formed CBOR at byte 0: additional information 28 is reserved (major type 1)
+3d	Not well-formed CBOR at byte 0: additional information 29 is reserved (major type 1)
+3e	Not well-formed CBOR at byte 0: additional information 30 is reserved (major type 1)
+5c	Not well-formed CBOR at byte 0: additional information 28 is reserved (major type 2)
+5d	Not well-formed CBOR at byte 0: additional information 29 is reserved (major type 2)
+5e	Not well-formed CBOR at byte 0: additional information 30 is reserved (major type 2)
+7c	Not well-formed CBOR at byte 0: additional information 28 is reserved (major type 3)
+7d	Not well-formed CBOR at byte 0: additional information 29 is reserved (major type 3)
+7e	Not well-formed CBOR at byte 0: additional information 30 is reserved (major type 3)
+9c	Not well-formed CBOR at byte 0: additional information 28 is reserved (major type 4)
+9d	Not well-formed CBOR at byte 0: additional information 29 is reserved (major type 4)
+9e	Not well-formed CBOR at byte 0: additional information 30 is reserved (major type 4)
+bc	Not well-formed CBOR at byte 0: additional information 28 is reserved (major type 5)
+bd	Not well-formed CBOR at byte 0: additional information 29 is reserved (major type 5)
+be	Not well-formed CBOR at byte 0: additional information 30 is reserved (major type 5)
+dc	Not well-formed CBOR at byte 0: additional information 28 is reserved (major type 6)
+dd	Not well-formed CBOR at byte 0: additional information 29 is reserved (major type 6)
+de	Not well-formed CBOR at byte 0: additional information 30 is reserved (major type 6)
+fc	Not well-formed CBOR at byte 0: additional information 28 is reserved (major type 7)
+fd	Not well-formed CBOR at byte 0: additional information 29 is reserved (major type 7)
+fe	Not well-formed CBOR at byte 0: additional information 30 is reserved (major type 7)
+f800	Not well-formed CBOR at byte 0: simple value 0 written in two bytes
+f801	Not well-formed CBOR at byte 0: simple value 1 written in two bytes
+f818	Not well-formed CBOR at byte 0: simple value 24 written in two bytes
+f81f	Not well-formed CBOR at byte 0: simple value 31 written in two bytes
+5f00ff	Not well-formed CBOR at byte 1: a chunk of major type 0 inside an indefinite-length byte string
+5f21ff	Not well-formed CBOR at byte 1: a chunk of major type 1 inside an indefinite-length byte string
+5f6100ff	Not well-formed CBOR at byte 1: a chunk of major type 3 inside an indefinite-length byte string
+5f80ff	Not well-formed CBOR at byte 1: a chunk of major type 4 inside an indefinite-length byte string
+5fa0ff	Not well-formed CBOR at byte 1: a chunk of major type 5 inside an indefinite-length byte string
+5fc000ff	Not well-formed CBOR at byte 1: a chunk of major type 6 inside an indefinite-length byte string
+5fe0ff	Not well-formed CBOR at byte 1: a chunk of major type 7 inside an indefinite-length byte string
+7f4100ff	Not well-formed CBOR at byte 1: a chunk of major type 2 inside an indefinite-length text string
+5f5f4100ffff	Not well-formed CBOR at byte 1: an indefinite-length chunk inside an indefinite-length string
+7f7f6100ffff	Not well-formed CBOR at byte 1: an indefinite-length chunk inside an indefinite-length string
+ff	Not well-formed CBOR at byte 0: a break outside an indefinite-length item
+81ff	Not well-formed CBOR at byte 1: a break outside an indefinite-length item
+8200ff	Not well-formed CBOR at byte 2: a break outside an indefinite-length item
+a1ff	Not well-formed CBOR at byte 0: a map of 1 entry, but only 1 byte is left
+a1ff00	Not well-formed CBOR at byte 1: a break outside an indefinite-length item
+a100ff	Not well-formed CBOR at byte 2: a break outside an indefinite-length item
+a20000ff	Not well-formed CBOR at byte 0: a map of 2 entries, but only 3 bytes are left
+9f81ff	Not well-formed CBOR at byte 2: a break outside an indefinite-length item
+9f829f819f9fffffffff	Not well-formed CBOR at byte 9: a break outside an indefinite-length item
+bf00ff	Not well-formed CBOR at byte 2: a break between a map key and its value
+bf000000ff	Not well-formed CBOR at byte 4: a break between a map key and its value
+1f	Not well-formed CBOR at byte 0: major type 0 cannot have an indefinite length
+3f	Not well-formed CBOR at byte 0: major type 1 cannot have an indefinite length
+df	Not well-formed CBOR at byte 0: major type 6 cannot have an indefinite length
