@@ -107,7 +107,10 @@ Algorithms: ES256, ES384, ES512, EdDSA (Ed25519 and Ed448), Ed25519, Ed448, RS25
 - **CBOR**: RFC 8949's examples (Appendix A read as its diagnostic notation, Appendix F's 94
   not-well-formed items refused), random values written every legal way, and damaged encodings,
   all read the same by PeterO's CBOR (java-webauthn-server's).
-- **Mutation testing** with PIT on both libraries (see [development.md](development.md)).
+- **Mutation testing** with PIT on both libraries (see [development.md](development.md)):
+  snaphop-cbor kills 98% of its mutants, snaphop-webauthn 94%. Most survivors are in the strict
+  DER check, where the JDK refuses the same signatures, so removing ours changes nothing today;
+  it stays for the day the JDK accepts one it shouldn't.
 
 ## Building
 
