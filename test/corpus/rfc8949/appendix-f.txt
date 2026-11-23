@@ -1,0 +1,95 @@
+# RFC 8949 Appendix F.1: CBOR that is not well-formed (hex), and the RFC's heading for it.
+18	End of input in a head
+19	End of input in a head
+1a	End of input in a head
+1b	End of input in a head
+1901	End of input in a head
+1a0102	End of input in a head
+1b01020304050607	End of input in a head
+38	End of input in a head
+58	End of input in a head
+78	End of input in a head
+98	End of input in a head
+9a01ff00	End of input in a head
+b8	End of input in a head
+d8	End of input in a head
+f8	End of input in a head
+f900	End of input in a head
+fa0000	End of input in a head
+fb000000	End of input in a head
+41	Definite-length strings with short data
+61	Definite-length strings with short data
+5affffffff00	Definite-length strings with short data
+5bffffffffffffffff010203	Definite-length strings with short data
+7affffffff00	Definite-length strings with short data
+7b7fffffffffffffff010203	Definite-length strings with short data
+81	Definite-length maps and arrays not closed with enough items
+818181818181818181	Definite-length maps and arrays not closed with enough items
+8200	Definite-length maps and arrays not closed with enough items
+a1	Definite-length maps and arrays not closed with enough items
+a20102	Definite-length maps and arrays not closed with enough items
+a100	Definite-length maps and arrays not closed with enough items
+a2000000	Definite-length maps and arrays not closed with enough items
+c0	Tag number not followed by tag content
+5f4100	Indefinite-length strings not closed by a "break" stop code
+7f6100	Indefinite-length strings not closed by a "break" stop code
+9f	Indefinite-length maps and arrays not closed by a "break" stop code
+9f0102	Indefinite-length maps and arrays not closed by a "break" stop code
+bf	Indefinite-length maps and arrays not closed by a "break" stop code
+bf01020102	Indefinite-length maps and arrays not closed by a "break" stop code
+819f	Indefinite-length maps and arrays not closed by a "break" stop code
+9f8000	Indefinite-length maps and arrays not closed by a "break" stop code
+9f9f9f9f9fffffffff	Indefinite-length maps and arrays not closed by a "break" stop code
+9f819f819f9fffffff	Indefinite-length maps and arrays not closed by a "break" stop code
+1c	Reserved additional information values
+1d	Reserved additional information values
+1e	Reserved additional information values
+3c	Reserved additional information values
+3d	Reserved additional information values
+3e	Reserved additional information values
+5c	Reserved additional information values
+5d	Reserved additional information values
+5e	Reserved additional information values
+7c	Reserved additional information values
+7d	Reserved additional information values
+7e	Reserved additional information values
+9c	Reserved additional information values
+9d	Reserved additional information values
+9e	Reserved additional information values
+bc	Reserved additional information values
+bd	Reserved additional information values
+be	Reserved additional information values
+dc	Reserved additional information values
+dd	Reserved additional information values
+de	Reserved additional information values
+fc	Reserved additional information values
+fd	Reserved additional information values
+fe	Reserved additional information values
+f800	Reserved two-byte encodings of simple values
+f801	Reserved two-byte encodings of simple values
+f818	Reserved two-byte encodings of simple values
+f81f	Reserved two-byte encodings of simple values
+5f00ff	Indefinite-length string chunks not of the correct type
+5f21ff	Indefinite-length string chunks not of the correct type
+5f6100ff	Indefinite-length string chunks not of the correct type
+5f80ff	Indefinite-length string chunks not of the correct type
+5fa0ff	Indefinite-length string chunks not of the correct type
+5fc000ff	Indefinite-length string chunks not of the correct type
+5fe0ff	Indefinite-length string chunks not of the correct type
+7f4100ff	Indefinite-length string chunks not of the correct type
+5f5f4100ffff	Indefinite-length string chunks not definite length
+7f7f6100ffff	Indefinite-length string chunks not definite length
+ff	Break occurring on its own outside of an indefinite-length item
+81ff	Break occurring in a definite-length array or map or a tag
+8200ff	Break occurring in a definite-length array or map or a tag
+a1ff	Break occurring in a definite-length array or map or a tag
+a1ff00	Break occurring in a definite-length array or map or a tag
+a100ff	Break occurring in a definite-length array or map or a tag
+a20000ff	Break occurring in a definite-length array or map or a tag
+9f81ff	Break occurring in a definite-length array or map or a tag
+9f829f819f9fffffffff	Break occurring in a definite-length array or map or a tag
+bf00ff	Break in an indefinite-length map that would lead to an odd number of items (break in a value position)
+bf000000ff	Break in an indefinite-length map that would lead to an odd number of items (break in a value position)
+1f	Major type 0, 1, 6 with additional information 31
+3f	Major type 0, 1, 6 with additional information 31
+df	Major type 0, 1, 6 with additional information 31

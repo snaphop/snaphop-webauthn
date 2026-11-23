@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.snaphop</groupId>
+  <artifactId>snaphop-webauthn-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>snaphop-webauthn-parent</name>
+  <description>Small libraries for checking passkeys (WebAuthn) on a server, and the CBOR they are written in</description>
+  <url>https://github.com/snaphop/snaphop-webauthn</url>
+
+  <licenses>
+    <license>
+      <name>Zero-Clause BSD</name>
+      <url>https://opensource.org/license/0bsd</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <modules>
+    <module>snaphop-cbor</module>
+    <module>snaphop-webauthn</module>
+    <module>test</module>
+  </modules>
+
+  <scm>
+    <connection>scm:git:https://github.com/snaphop/snaphop-webauthn.git</connection>
+    <developerConnection>scm:git:git@github.com:snaphop/snaphop-webauthn.git</developerConnection>
+    <url>https://github.com/snaphop/snaphop-webauthn/tree/main</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>agentgt</id>
+      <name>Adam Gent</name>
+      <organization>SnapHop</organization>
+    </developer>
+  </developers>
+
+  <!--
+    Deploy targets come from the snaphop profile in .snaphop/settings.xml, as
+    in flylite: ./mvnw -s .snaphop/settings.xml deploy (the password from the
+    NEXUS_SNAPHOP_COM_PASSWORD environment variable). See bin/release.sh.
+  -->
+  <distributionManagement>
+    <snapshotRepository>
+      <id>${snapshotRepository.id}</id>
+      <name>${snapshotRepository.name}</name>
+      <url>${snapshotRepository.url}</url>
+    </snapshotRepository>
+    <repository>
+      <id>${releaseRepository.id}</id>
+      <name>${releaseRepository.name}</name>
+      <url>${releaseRepository.url}</url>
+    </repository>
+  </distributionManagement>
+
+  <properties>
+    <!-- The oldest LTS with Markdown doc comments (JDK 23+). The build
+         itself may run on a newer JDK. -->
+    <maven.compiler.release>25</maven.compiler.release>
+    <maven.compiler.failOnWarning>true</maven.compiler.failOnWarning>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Reproducible jars: the same sources make the same bytes. -->
+    <project.build.outputTimestamp>2026-11-22T22:30:00Z</project.build.outputTimestamp>
+    <jspecify.version>1.0.1</jspecify.version>
+    <junit.version>6.1.3</junit.version>
+    <!-- Oracles, in test modules only. -->
+    <webauthn4j.version>0.32.0.RELEASE</webauthn4j.version>
+    <yubico-webauthn.version>2.10.1</yubico-webauthn.version>
+    <jackson2.version>2.23.0</jackson2.version>
+    <upokecenter-cbor.version>4.5.6</upokecenter-cbor.version>
+    <pitest.version>1.30.2</pitest.version>
+    <pitest-junit5.version>1.2.3</pitest-junit5.version>
+    <errorprone.version>2.50.0</errorprone.version>
+    <nullaway.version>0.14.2</nullaway.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>snaphop-cbor</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>snaphop-webauthn</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jspecify</groupId>
+        <artifactId>jspecify</artifactId>
+        <version>${jspecify.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.webauthn4j</groupId>
+        <artifactId>webauthn4j-core</artifactId>
+        <version>${webauthn4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.yubico</groupId>
+        <artifactId>webauthn-server-core</artifactId>
+        <version>${yubico-webauthn.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.dataformat</groupId>
+        <artifactId>jackson-dataformat-cbor</artifactId>
+        <version>${jackson2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.upokecenter</groupId>
+        <artifactId>cbor</artifactId>
+        <version>${upokecenter-cbor.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.16.0</version>
+          <configuration>
+            <fork>true</fork>
+            <showWarnings>true</showWarnings>
+            <compilerArgs>
+              <!-- JSpecify annotations have no processor. Test modules
+                   have no main classes, so no target/classes (path). An
+                   implementation lives in its interface's file and is used
+                   from others (development.md), which auxiliaryclass forbids. -->
+              <arg>-Xlint:all,-processing,-path,-auxiliaryclass</arg>
+              <!-- Checks the doc comments that exist (links, syntax) on every
+                   member. Which ones must exist is javadoc's job. -->
+              <arg>-Xdoclint:all/private,-missing</arg>
+              <arg>-XDcompilePolicy=simple</arg>
+              <arg>--should-stop=ifError=FLOW</arg>
+              <!-- Error Prone's default checks, and NullAway for JSpecify
+                   @NullMarked code. Warnings fail the build (failOnWarning). -->
+              <arg>-Xplugin:ErrorProne -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:JSpecifyMode=true</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+              <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+              <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+            </compilerArgs>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_core</artifactId>
+                <version>${errorprone.version}</version>
+              </path>
+              <path>
+                <groupId>com.uber.nullaway</groupId>
+                <artifactId>nullaway</artifactId>
+                <version>${nullaway.version}</version>
+              </path>
+            </annotationProcessorPaths>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.5.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.4.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-help-plugin</artifactId>
+          <version>3.5.2</version>
+        </plugin>
+        <plugin>
+          <!-- bin/release.sh sets each module's version with it. -->
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>2.23.0</version>
+          <configuration>
+            <generateBackupPoms>false</generateBackupPoms>
+            <processAllModules>true</processAllModules>
+          </configuration>
+        </plugin>
+        <plugin>
+          <!-- Whatever is public must be documented, @param and @return
+               included: making something public should be worth explaining.
+               Package-private code needs no comments. -->
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.12.0</version>
+          <configuration>
+            <show>public</show>
+            <doclint>all</doclint>
+            <failOnWarnings>true</failOnWarnings>
+            <quiet>true</quiet>
+            <!-- Run every time: its up-to-date check misses changed contents. -->
+            <staleDataPath></staleDataPath>
+            <additionalOptions>
+              <additionalOption>--no-platform-links</additionalOption>
+            </additionalOptions>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.3</version>
+        <executions>
+          <execution>
+            <id>java-version</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[25,)</version>
+                  <message>Build with Java 25 or newer (sdk env install, then sdk env).</message>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <!-- Mutation testing of a library module and its own fast tests:
+           ./mvnw -pl snaphop-cbor,snaphop-webauthn -am -Pmutation test-compile org.pitest:pitest-maven:mutationCoverage
+           writes each module's target/pit-reports/index.html. -->
+      <id>mutation</id>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.pitest</groupId>
+              <artifactId>pitest-maven</artifactId>
+              <version>${pitest.version}</version>
+              <dependencies>
+                <dependency>
+                  <groupId>org.pitest</groupId>
+                  <artifactId>pitest-junit5-plugin</artifactId>
+                  <version>${pitest-junit5.version}</version>
+                </dependency>
+              </dependencies>
+              <configuration>
+                <mutators>
+                  <mutator>STRONGER</mutator>
+                </mutators>
+                <threads>8</threads>
+                <timeoutConstant>8000</timeoutConstant>
+                <outputFormats>
+                  <param>HTML</param>
+                  <param>XML</param>
+                </outputFormats>
+                <timestampedReports>false</timestampedReports>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+    <profile>
+      <!-- A release (bin/release.sh, then the deploy workflow on its tag):
+           no SNAPSHOT version or dependency, and deployed with
+           .snaphop/settings.xml. -->
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-release</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireReleaseVersion>
+                      <message>Releases must not be SNAPSHOT versions</message>
+                    </requireReleaseVersion>
+                    <requireReleaseDeps>
+                      <message>Releases must not depend on SNAPSHOT versions</message>
+                    </requireReleaseDeps>
+                    <requireProperty>
+                      <property>releaseRepository.url</property>
+                      <message>Deploy with -s .snaphop/settings.xml</message>
+                    </requireProperty>
+                  </rules>
+                  <fail>true</fail>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>
