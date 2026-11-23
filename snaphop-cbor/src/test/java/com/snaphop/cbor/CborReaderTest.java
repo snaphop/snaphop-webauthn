@@ -68,6 +68,12 @@ class CborReaderTest {
     DEPTH_COUNTS_TAGS("81c180", Mode.DEPTH_TWO, "!CBOR past the reader's limits at byte 2: nested deeper than 2"),
     DEPTH_COUNTS_MAPS("a101a100f6", Mode.DEPTH_TWO, "{1: {0: null}}"),
     DEPTH_COUNTS_MAP_KEYS("a1a10000a1000a", Mode.DEPTH_TWO, "{{0: 0}: {0: 10}}"),
+    DEPTH_COUNTS_INDEFINITE_ARRAYS("9f9f9fffffff", Mode.DEPTH_TWO, "!CBOR past the reader's limits at byte 2: nested deeper than 2"),
+    DEPTH_INDEFINITE_ARRAYS_AT_LIMIT("9f9fffff", Mode.DEPTH_TWO, "[[]]"),
+    DEPTH_COUNTS_MAP_AT_LIMIT("8181a0", Mode.DEPTH_TWO, "!CBOR past the reader's limits at byte 2: nested deeper than 2"),
+    DEPTH_COUNTS_MAP_VALUES("a101a101a10000", Mode.DEPTH_TWO, "!CBOR past the reader's limits at byte 4: nested deeper than 2"),
+    DEPTH_COUNTS_MAP_KEYS_TOO("a1a1a100000000", Mode.DEPTH_TWO, "!CBOR past the reader's limits at byte 2: nested deeper than 2"),
+    DEPTH_COUNTS_TAG_AT_LIMIT("81c1c100", Mode.DEPTH_TWO, "!CBOR past the reader's limits at byte 2: nested deeper than 2"),
     DEPTH_ZERO_ALLOWS_SCALARS("01", Mode.DEPTH_ZERO, "1"),
     DEPTH_ZERO_REFUSES_CONTAINERS("80", Mode.DEPTH_ZERO, "!CBOR past the reader's limits at byte 0: nested deeper than 0");
 
@@ -145,6 +151,22 @@ class CborReaderTest {
     assertEquals(1000, depth(thousand.read(deep)));
   }
 
+  @Test
+  void hashCodesSpread() {
+    java.util.Random random = new java.util.Random(1);
+    java.util.Set<CborValue> values = new java.util.HashSet<>();
+    java.util.Set<Integer> hashes = new java.util.HashSet<>();
+    while (values.size() < 200) {
+      CborValue v = Encoder.randomValue(random, 2);
+      if ((v instanceof CborMap m && m.size() > 0) || v instanceof CborBytes) {
+        if (values.add(v)) {
+          hashes.add(v.hashCode());
+        }
+      }
+    }
+    assertEquals(true, hashes.size() > 180, "distinct hash codes: " + hashes.size());
+  }
+
   private static int depth(CborValue v) {
     int d = 0;
     while (v instanceof CborArray a && !a.items().isEmpty()) {
@@ -207,6 +229,11 @@ class CborReaderTest {
     assertEquals(4, new CborArray(List.of()).majorType());
     assertEquals(6, new CborTag(1, CborSimple.NULL).majorType());
     assertEquals("-1.0e-7", new CborFloat(-1e-7).toString());
+    assertEquals("1.0e+300", new CborFloat(1e300).toString());
+    assertEquals("1.5e-300", new CborFloat(1.5e-300).toString());
+    assertEquals("-Infinity", new CborFloat(Double.NEGATIVE_INFINITY).toString());
+    assertEquals("Infinity", new CborFloat(Double.POSITIVE_INFINITY).toString());
+    assertEquals("\"\\u001f ~\\u007f\"", new CborText("\u001f ~\u007f").toString());
     assertEquals("1.0e+21", new CborFloat(1e21).toString());
     assertEquals("123456789012345680000.0", new CborFloat(1.2345678901234568e20).toString());
     assertEquals("0.000001", new CborFloat(1e-6).toString());

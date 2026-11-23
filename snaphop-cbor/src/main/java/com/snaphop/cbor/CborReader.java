@@ -161,8 +161,8 @@ final class Decoder {
     return switch (major) {
       case 0 -> new CborInteger(argument(start, major, info));
       case 1 -> new CborInteger(BigInteger.ONE.negate().subtract(argument(start, major, info)));
-      case 2 -> info == 31 ? CborBytes.owning(chunks(start, 2)) : CborBytes.owning(take(start, length(start, major, info), "byte string"));
-      case 3 -> new CborText(utf8(start, info == 31 ? chunks(start, 3) : take(start, length(start, major, info), "text string")));
+      case 2 -> CborBytes.owning(info == 31 ? chunks(start, 2) : take(length(start, major, info)));
+      case 3 -> new CborText(utf8(start, info == 31 ? chunks(start, 3) : take(length(start, major, info))));
       case 4 -> array(start, info, depth);
       case 5 -> map(start, info, depth);
       case 6 -> tag(start, info, depth);
@@ -234,10 +234,8 @@ final class Decoder {
     return n + " " + (n == 1 ? one : many);
   }
 
-  private byte[] take(int start, int length, String what) {
-    if (length > in.length - pos) {
-      throw notWellFormed(start, what + " runs past the end");
-    }
+  /// Bytes already known to be there: [#length] checked.
+  private byte[] take(int length) {
     byte[] b = Arrays.copyOfRange(in, pos, pos + length);
     pos += length;
     return b;
@@ -266,7 +264,7 @@ final class Decoder {
       if (info >= 28) {
         throw notWellFormed(chunkStart, "additional information " + info + " is reserved (major type " + major + ")");
       }
-      byte[] chunk = take(chunkStart, length(chunkStart, major, info), major == 2 ? "byte string" : "text string");
+      byte[] chunk = take(length(chunkStart, major, info));
       if (major == 3) {
         utf8(chunkStart, chunk);
       }

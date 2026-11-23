@@ -22,7 +22,7 @@ public record CborFloat(double value) implements CborValue {
       return "NaN";
     }
     if (Double.isInfinite(value)) {
-      return value > 0 ? "Infinity" : "-Infinity";
+      return value == Double.POSITIVE_INFINITY ? "Infinity" : "-Infinity";
     }
     if (value == 0) {
       return Double.doubleToRawLongBits(value) < 0 ? "-0.0" : "0.0";
@@ -36,10 +36,8 @@ public record CborFloat(double value) implements CborValue {
       String plain = d.stripTrailingZeros().toPlainString();
       return plain.contains(".") ? plain : plain + ".0";
     }
+    // Not zero, so there is a digit that isn't 0.
     String digits = d.unscaledValue().abs().toString().replaceAll("0+$", "");
-    if (digits.isEmpty()) {
-      digits = "0";
-    }
     int exponent = d.precision() - d.scale() - 1;
     String mantissa = digits.charAt(0) + "." + (digits.length() > 1 ? digits.substring(1) : "0");
     return (value < 0 ? "-" : "") + mantissa + "e" + (exponent >= 0 ? "+" : "-") + Math.abs(exponent);
