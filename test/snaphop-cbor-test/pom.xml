@@ -6,7 +6,7 @@
   <parent>
     <groupId>com.snaphop</groupId>
     <artifactId>snaphop-webauthn-test-parent</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1-SNAPSHOT</version>
   </parent>
   <artifactId>snaphop-cbor-test</artifactId>
   <name>snaphop-cbor-test</name>

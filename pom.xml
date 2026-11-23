@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.snaphop</groupId>
   <artifactId>snaphop-webauthn-parent</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>snaphop-webauthn-parent</name>
   <description>Small libraries for checking passkeys (WebAuthn) on a server, and the CBOR they are written in</description>
@@ -65,7 +65,7 @@
     <maven.compiler.failOnWarning>true</maven.compiler.failOnWarning>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Reproducible jars: the same sources make the same bytes. -->
-    <project.build.outputTimestamp>2026-11-23T15:28:48Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-11-23T15:29:13Z</project.build.outputTimestamp>
     <jspecify.version>1.0.1</jspecify.version>
     <junit.version>6.1.3</junit.version>
     <!-- Oracles, in test modules only. -->
