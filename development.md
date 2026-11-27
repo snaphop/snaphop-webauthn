@@ -133,6 +133,13 @@ random. What they assert: a value reads back as itself, and damage is refused wi
 own exception and nothing else. `-Dfuzz.iterations=N` and `-Ddamage.iterations=N` set how many;
 `-Ddamage.show=true` prints each disagreement with the oracles.
 
+`CombinationTest` (ceremonies, against a model of WebAuthn's rules) and `CombinationOracleTest`
+(the same against the oracles) change many parts of a ceremony at once, where `CeremonyTest` and
+`OracleTest` change one. `-Dcombinations.iterations=N` and `-Dcombinations.seed=S` set how many and
+where to start; a failure names its seed. `-Dcombinations.show=true` prints each disagreement with
+the oracles; a new one fails the test until it is explained in `OracleTest` and listed in
+`CombinationOracleTest`.
+
 ### Mutation testing
 
 With PIT (`STRONGER` mutators), on both libraries and their own tests:

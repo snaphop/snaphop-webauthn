@@ -134,6 +134,12 @@ Algorithms: ES256, ES384, ES512, EdDSA (Ed25519 and Ed448), Ed25519, Ed448, RS25
 - **JavaScript reference**: SimpleWebAuthn verifies the same registration and assertion bytes
   on Node in the test module. CI requires this comparison, including stored credential values
   and representative refusal cases.
+- **Combinations**: thousands of random relying parties (origins, top origins, cross-origin,
+  user verification, algorithms, attestation, sign-count checks), each registering a random
+  credential and signing in with it several times, with many things changed at once. A model of
+  WebAuthn's rules says what must happen: accepted with the expected credential, flags and sign
+  count, or refused for one of the reasons that apply. The same combinations go to both oracles:
+  every difference is one of the explained ones above.
 - **Damage**: thousands of real ceremonies with random damage (a bit flipped, a byte changed,
   added, taken out, cut short). This library only ever refuses with a `WebauthnException`, and
   never accepts what an oracle refuses.
