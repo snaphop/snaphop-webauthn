@@ -14,9 +14,9 @@ jobs:
       MAVEN_CLI_OPTS: "-s .snaphop/settings.xml --batch-mode --no-transfer-progress"
       NEXUS_SNAPHOP_COM_PASSWORD: ${{ secrets.NEXUS_SNAPHOP_COM_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: '25'
           distribution: 'temurin'
